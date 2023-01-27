@@ -10,7 +10,7 @@ fn main() {
         let y = nums[1];
         let n = nums[2];
 
-        fizz_buzz(x, y, n)
+        fizz_buzz(x, y, n);
     }
 }
 
