@@ -15,7 +15,7 @@ fn main() {
 }
 
 fn fizz_buzz(x: i64, y: i64, n: i64) {
-    for i in 1..n + 1 {
+    for i in 1..=n {
         if i % x == 0 && i % y == 0 {
             println!("FizzBuzz");
         } else if i % x == 0 {
