@@ -2,8 +2,7 @@ use std::collections::BinaryHeap;
 use std::cmp::Reverse;
 use std::io;
 
-
-
+#[allow(dead_code)]
 fn main() {
     let mut line = String::new();
     io::stdin().read_line(&mut line).unwrap();
