@@ -1,35 +1,41 @@
-use std::collections::BinaryHeap;
-use std::cmp::Reverse;
-use std::io;
+use std::{io::{self, Read}, iter::OnceWith};
 
-#[allow(dead_code)]
-fn main() {
-    let mut line = String::new();
-    io::stdin().read_line(&mut line).unwrap();
-    io::stdin().read_line(&mut line).unwrap();
-    let first_line_vec : Vec<&str> = line.split_whitespace().collect();
-    println!("{:?}", first_line_vec);
-    let mut min_heap : BinaryHeap<Reverse<u16>> = BinaryHeap::from_iter(first_line_vec[1..].iter().map(|x| Reverse(x.parse::<u16>().unwrap())));
-    print!("{:?}", min_heap.iter());
-    let prev : u16 = min_heap.pop().unwrap().0;
-    print!("{}", prev);
-    make_output(&mut min_heap, prev);
+pub fn main() {
+    let mut input = String::new();
+    io::stdin().read_to_string(&mut input).unwrap();
+    let mut input = input.split_ascii_whitespace();
+    
+    let n : usize = input.next().unwrap().parse().unwrap();
+
+    let mut busnumbers : Vec<u16> = vec![];
+
+    for _ in 0..n {
+        let v = input.next().unwrap().parse::<u16>().unwrap(); 
+        busnumbers.push(v);
+    }
+
+    busnumbers.sort();
+
+    print_busses(busnumbers, 0, 0);
+    
 }
 
-fn make_output(min_heap : &mut BinaryHeap<Reverse<u16>>, prev : u16) -> () {
-    println!("i : {}", prev);
-    if let opt = min_heap.pop().unwrap() {
-        let x = opt.0;
-        if x == prev + 1 {
-            if x + 1 != min_heap.pop().unwrap().0 {
-                print!("-{}", x);
-                make_output(min_heap, x);
-            } else {
-                make_output(min_heap, x);
-            }
-        } else {
-            print!("{}", prev);
-            make_output(min_heap, x);
+fn print_busses(busses : Vec<u16>, i : usize, x : usize) -> () {
+    let cur = busses[i];
+
+    if (i + 1 != busses.len() && busses[i + 1] == cur + 1) {
+        if x == 0 {
+            print!("{}", cur);
         }
+        if i + 1 == busses.len() {return;}
+        print_busses(busses, i+1, x+1)
+    } else {
+        if x > 1 {
+            print!("-{} ", cur);
+        } else {
+            print!(" {} ", cur);
+        }
+        if i + 1 == busses.len() {return;}
+        print_busses(busses, i+1, 0);
     }
 }
