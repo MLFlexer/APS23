@@ -1,7 +1,8 @@
 mod bus_numbers;
 mod grandpabernie;
+mod pairingsocks;
 mod server;
 
 fn main() {
-    bus_numbers::main();
+    pairingsocks::main();
 }
