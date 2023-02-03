@@ -1,0 +1,18 @@
+def foo 3
+calc foo + bar =
+def bar 7
+def programming 10
+calc foo + bar =
+def is 4
+def fun 8
+calc programming - is + fun =
+def fun 1
+calc programming - is + fun =
+calc fun =
+calc dufar =
+clear
+def is 4
+def is 8
+def is 16
+calc is = 
+calc programming - is + fun =
