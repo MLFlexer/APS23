@@ -6,8 +6,8 @@ pub fn main() {
     let mut input = input.split_ascii_whitespace();
     
     //let n : u32 = input.next().unwrap().parse().unwrap();
-    let mut var_env : HashMap<&str, i16>= HashMap::new();
-    let mut val_env : HashMap<i16, &str>= HashMap::new();
+    let mut var_env : HashMap<&str, i64>= HashMap::new();
+    let mut val_env : HashMap<i64, &str>= HashMap::new();
 
     let mut word = input.next();
     while word != None {
@@ -18,7 +18,7 @@ pub fn main() {
             },
             "def" => {
                 let var = input.next().unwrap();
-                let val : i16 = input.next().unwrap().parse().unwrap();
+                let val : i64 = input.next().unwrap().parse().unwrap();
                 var_env.insert(var, val);
                 val_env.insert(val, var);
             },
@@ -45,7 +45,7 @@ pub fn main() {
 }
 
 
-fn cal(mut input : &mut std::str::SplitAsciiWhitespace, var_env : &HashMap<&str, i16>, result : Option<i16>) -> Option<i16> {
+fn cal(mut input : &mut std::str::SplitAsciiWhitespace, var_env : &HashMap<&str, i64>, result : Option<i64>) -> Option<i64> {
     let op = input.next().unwrap();
     print!("{} ", op);
     match op {

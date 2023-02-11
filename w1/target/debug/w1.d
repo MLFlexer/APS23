@@ -1,0 +1,1 @@
+/home/hotdog2c/Desktop/APS23/w1/target/debug/w1: /home/hotdog2c/Desktop/APS23/w1/src/bus_numbers.rs /home/hotdog2c/Desktop/APS23/w1/src/grandpabernie1.rs /home/hotdog2c/Desktop/APS23/w1/src/main.rs /home/hotdog2c/Desktop/APS23/w1/src/server.rs
