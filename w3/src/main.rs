@@ -1,7 +1,8 @@
 mod rijeci;
 //mod pepple;
 mod tight;
+mod knapsack;
 
 fn main() {
-    tight::main();
+    knapsack::main();
 }
