@@ -1,4 +1,4 @@
-use std::io::{self, Read};
+use std::{io::{self, Read}, collections::HashMap};
 
 pub fn main() {
     let mut input = String::new();
@@ -7,38 +7,29 @@ pub fn main() {
     
     let n : i32 = input.next().unwrap().parse().unwrap();
     for _ in 0..n {
-        let board = [false; 12];
+        let board : [u8; 12] = [0; 12];
         let str_board = input.next().unwrap();
-        for i in str_board.chars() {
-            match i {
-                '-' => {},
-                'o' => {},
+        let i = 0;
+        for c in str_board.chars() {
+            match c {
+                '-' => {board[i] = 0},
+                'o' => {board[i] = 1},
             }
+            i += 1;
+        }
+
+        let mut mem : HashMap<[u8; 12], i64> = HashMap::new();
+
+
+    }
+}
+
+fn search(board : [u8; 12], mem : HashMap<[u8; 12], i64>) -> i64 {
+    for i in 1..11 {
+        match (board[i - 1], board[i], board[i + 1]) {
+            (0,1,1) => {},
+            _ => {},
         }
     }
-
-    //lst.sort_by(|(c_a, _), (c_b, _)| c_a.partial_cmp(c_b).unwrap());
-
-/*     let mut timeslots : Vec<i32> = vec![0; t as usize];
-    
-    for _ in 0..=n {
-        match lst.pop() {
-            Some((money, wait)) => {
-                let mut min = t - 1;
-                if wait < t {
-                    min = wait;
-                }
-                for i in 0..=min {
-                    let index = timeslots[(min - i) as usize];
-                    if index == 0 {
-                        timeslots[(min - i) as usize] = money; 
-                        // println!("{:?}", timeslots);
-                        break;
-                    }
-                }
-            },
-            None => break,
-        }
-    } */
-    //println!("{}", timeslots.iter().sum::<i32>())
+    return 0;
 }
