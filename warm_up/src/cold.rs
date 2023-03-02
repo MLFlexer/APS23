@@ -3,7 +3,6 @@ use std::io::{self, BufRead};
 pub fn main() {
     let stdin = io::stdin();
     let mut iterator = stdin.lock().lines();
-    iterator = None;
     
     let n : usize = (iterator.next().unwrap().unwrap())
         .parse::<usize>().unwrap(); 
