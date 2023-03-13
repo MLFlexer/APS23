@@ -11,8 +11,8 @@ struct Edge {
 
 impl Edge {
     fn get_remainging_flow(&self) -> i32 {
-        println!("remaining: {}", (self.capacity - self.flow));
-        println!("capacity: {}", self.capacity);
+        // println!("remaining: {}", (self.capacity - self.flow));
+        // println!("capacity: {}", self.capacity);
         return self.capacity - self.flow;
     }
 }
@@ -51,19 +51,32 @@ pub fn main() {
             },
         );
     }
+    let original_graph = graph.clone();
     let (max_flow, min_cut_nodes) = solve_flow(&mut graph, s, t, max_cap);
-    println!("max_flow: {:?}", max_flow);
-    println!("min_cut_nodes: {:?}", min_cut_nodes);
-    println!("graph: {:?}", graph);
+    // println!("max_flow: {:?}", max_flow);
+    // println!("min_cut_nodes: {:?}", min_cut_nodes);
+    // println!("graph: {:?}", graph);
+    let mut lines: Vec<String> = vec![];
 
-    for from_node in 0..graph.len() {
+    for from_node in 0..original_graph.len() {
         for (to_node, edge) in &graph[from_node] {
-            let cap = edge.flow;
+            let cap = edge.capacity;
+            let flow = graph[from_node].get(to_node).unwrap().flow;
 
-            if edge.flow <= edge.capacity && edge.capacity != 0 {
-                println!("{from_node} {to_node} {cap}");
+            if flow <= cap && cap != 0 && flow > 0 {
+                let cap_flow = cap - flow;
+                lines.push(format!("{from_node} {to_node} {flow}"));
+                //println!("{from_node} {to_node} {cap}");
             }
         }
+    }
+
+    let m_lines = lines.len();
+    //println!("{:?}", min_cut_nodes);
+    println!("{n} {max_flow} {m_lines}");
+
+    for line in lines {
+        println!("{}", line);
     }
 }
 
@@ -72,7 +85,7 @@ fn bfs(
     source: usize,
     sink: usize,
     cap: i32,
-) -> Option<Vec<(usize, usize)>> {
+) -> Option<(i32, Vec<(usize, usize)>)> {
     //TODO: bør returnere den mindste capacity, som kan flowes
     //igennem, så man undgår at skulle løbe det igennem på linje
     //88/98
@@ -87,12 +100,15 @@ fn bfs(
                 if to_node == sink {
                     let mut path: Vec<(usize, usize)> = vec![];
                     let mut curr_node = sink;
+                    let mut bottle_neck = edge.get_remainging_flow();
                     while curr_node != source {
                         let tmp = *parents.get(&curr_node).unwrap();
+                        bottle_neck = bottle_neck
+                            .min(graph[tmp].get(&curr_node).unwrap().get_remainging_flow());
                         path.push((tmp, curr_node));
                         curr_node = tmp;
                     }
-                    return Some(path);
+                    return Some((bottle_neck, path));
                 }
             }
         }
@@ -107,29 +123,31 @@ fn solve_flow(
     max_cap: i32,
 ) -> (i32, Vec<(usize, usize)>) {
     let mut curr_cap = max_cap;
-    let mut bottle_neck = i32::MAX;
+    //let mut bottle_neck = i32::MAX;
     let mut max_flow = 0;
     let mut path: Vec<(usize, usize)> = vec![];
     loop {
         match bfs(&graph, source, sink, curr_cap) {
-            Some(found_path) => {
-                {
-                    for (from_node, to_node) in &found_path {
-                        bottle_neck = bottle_neck.min(
-                            graph[*from_node]
-                                .get(&to_node)
-                                .unwrap()
-                                .get_remainging_flow(),
-                        );
-                    }
-                }
+            Some((bottle_neck, found_path)) => {
+                // {
+                //     println!("bottle_neck bfs: {}", bottle_neck);
+                //     for (from_node, to_node) in &found_path {
+                //         bottle_neck = bottle_neck.min(
+                //             graph[*from_node]
+                //                 .get(&to_node)
+                //                 .unwrap()
+                //                 .get_remainging_flow(),
+                //         );
+                //     }
+                //     println!("bottle_neck: {}", bottle_neck);
+                // }
 
                 max_flow += bottle_neck;
 
                 for (from_node, to_node) in &found_path {
                     //TODO: husk at sætte residual graph, hvis det er fejl!
                     graph[*from_node].get_mut(&to_node).unwrap().flow += bottle_neck;
-                    graph[*to_node].get_mut(&from_node).unwrap().flow += bottle_neck;
+                    graph[*to_node].get_mut(&from_node).unwrap().flow -= bottle_neck;
                 }
                 path = found_path;
             }
