@@ -1,140 +1,8 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{HashMap, HashSet, VecDeque},
     io::{self, Read},
+    vec,
 };
-
-#[derive(Debug, Clone)]
-struct Edge {
-    from: usize,
-    to: usize,
-    flow: i64,
-    capacity: i64,
-}
-
-impl Edge {
-    fn get_residual<'a>(&'a self, graph: &'a mut Graph) -> &mut Edge {
-        return graph
-            .nodes
-            .get_mut(self.to)
-            .unwrap()
-            .get_mut(&self.from)
-            .unwrap();
-    }
-    fn new(from: usize, to: usize, capacity: i64) -> Edge {
-        return Edge {
-            from,
-            to,
-            flow: 0,
-            capacity,
-        };
-    }
-    fn augment(&mut self, threshold: i64, graph: &mut Graph) {
-        self.flow += threshold;
-        let mut residual = self.get_residual(graph);
-        residual.flow -= threshold;
-    }
-    fn get_remaining_capacity(&self) -> i64 {
-        return self.capacity - self.flow;
-    }
-}
-
-#[derive(Debug, Clone)]
-struct Graph {
-    nodes: Vec<HashMap<usize, Edge>>,
-    source: usize,
-    sink: usize,
-    max_cap: i64,
-    max_flow: i64,
-}
-
-impl Graph {
-    fn new(source: usize, sink: usize, size: usize) -> Graph {
-        return Graph {
-            nodes: vec![HashMap::new(); size],
-            source,
-            sink,
-            max_cap: 0,
-            max_flow: 0,
-        };
-    }
-    fn add_edge(&mut self, edge: Edge) -> () {
-        self.max_cap = edge.capacity.max(self.max_cap);
-        self.nodes.get_mut(edge.from).unwrap().insert(edge.to, edge);
-    }
-    fn solve(&mut self) {
-        let mut threshold: i64 = 2_i64.pow(27); //power of 2 which is closest to 10⁸
-        while self.max_cap < threshold {
-            threshold = threshold / 2;
-        }
-        // println!("threshold: {}", threshold);
-        let mut visited: Vec<i64> = vec![0; self.nodes.len()];
-        let mut visit_id = 1;
-        while threshold > 0 {
-            let mut f = 0;
-            loop {
-                f = self.dfs(self.source, i64::MAX, &mut visited, visit_id, threshold);
-                // println!("f: {}", f);
-                // println!("source: {:?}", self.nodes.get(self.source));
-                // println!("sink: {:?}", self.nodes.get(self.sink));
-                self.max_flow += f;
-                visit_id += 1;
-                if f == 0 {
-                    break;
-                }
-            }
-            threshold /= 2;
-        }
-    }
-    fn dfs(
-        &mut self,
-        node: usize,
-        flow: i64,
-        visited: &mut Vec<i64>,
-        visit_id: i64,
-        threshold: i64,
-    ) -> i64 {
-        if node == self.sink {
-            return flow;
-        }
-        visited.insert(node, visit_id);
-        let edges = self.nodes.get(node).unwrap().clone();
-
-        for (to_node, edge) in edges {
-            let cap = edge.get_remaining_capacity();
-            if cap >= threshold && !(visited[edge.to] == visit_id) {
-                let ret_flow = self.dfs(edge.to, flow.min(cap), visited, visit_id, threshold);
-
-                if ret_flow > 0 {
-                    // edge.flow += threshold;
-                    // let mut residual = self
-                    //     .nodes
-                    //     .get_mut(edge.to)
-                    //     .unwrap()
-                    //     .get_mut(edge.from)
-                    //     .unwrap();
-                    //residual.flow -= threshold;
-                    // self.flow += threshold;
-                    // let mut residual = self.get_residual(graph);
-                    // residual.flow -= threshold;
-                    {
-                        let edge = self.nodes.get_mut(node).unwrap().get_mut(&to_node).unwrap();
-                        //edge.augment(ret_flow, self);
-                        edge.flow += threshold;
-                    }
-                    let mut residual = self
-                        .nodes
-                        .get_mut(edge.to)
-                        .unwrap()
-                        .get_mut(&edge.from)
-                        .unwrap();
-                    residual.flow -= threshold;
-                    return ret_flow;
-                }
-            }
-        }
-        return 0;
-    }
-}
 
 pub fn main() {
     let mut input = String::new();
@@ -146,57 +14,98 @@ pub fn main() {
     let s: usize = input.next().unwrap().parse().unwrap();
     let t: usize = input.next().unwrap().parse().unwrap();
 
-    let mut graph: Graph = Graph::new(s, t, n);
+    let mut graph: Vec<HashMap<usize, i32>> = vec![HashMap::new(); n];
+    let mut max_cap = 0;
     for _ in 0..m {
         let u: usize = input.next().unwrap().parse().unwrap();
         let v: usize = input.next().unwrap().parse().unwrap();
-        let c: i64 = input.next().unwrap().parse().unwrap();
-        graph.add_edge(Edge::new(u, v, c));
-        graph.add_edge(Edge::new(v, u, 0));
+        let c: i32 = input.next().unwrap().parse().unwrap();
+        if c > max_cap {
+            max_cap = c;
+        }
+        graph[u].insert(v, c);
+        graph[v].insert(u, 0);
     }
-    let mut threshold: i64 = 2_i64.pow(27); //power of 2 which is closest to 10⁸
-    let max_cap: i64 = graph.max_cap;
+    let (max_flow, min_cut_nodes) = solve_flow(&mut graph, s, t, max_cap);
+    println!("max_flow: {:?}", max_flow);
+    println!("min_cut_nodes: {:?}", min_cut_nodes);
+    println!("graph: {:?}", graph);
 
-    while max_cap <= threshold {
-        threshold = threshold / 2;
+    for from_node in 0..graph.len() {
+        for (to_node, capacity) in &graph[from_node] {
+            if *capacity > 0 {
+                println!("{from_node} {to_node} {capacity}");
+            }
+        }
     }
-    graph.solve();
-    // println!("{}", graph.max_flow);
-    // println!("source: {:?}", graph.nodes.get(graph.source));
-    // println!("sink: {:?}", graph.nodes.get(graph.sink));
+}
+
+fn bfs(
+    graph: &Vec<HashMap<usize, i32>>,
+    source: usize,
+    sink: usize,
+    cap: i32,
+) -> Option<Vec<(usize, usize)>> {
+    let mut parents: HashMap<usize, usize> = HashMap::new();
+    let mut queue: VecDeque<usize> = VecDeque::from([source]);
+    while !queue.is_empty() {
+        let from_node = queue.pop_front().unwrap();
+        for (to_node, flow) in graph[from_node].clone() {
+            if flow >= cap && !parents.contains_key(&to_node) {
+                parents.insert(to_node, from_node);
+                queue.push_back(to_node);
+                if to_node == sink {
+                    let mut path: Vec<(usize, usize)> = vec![];
+                    let mut curr_node = sink;
+                    while curr_node != source {
+                        let tmp = *parents.get(&curr_node).unwrap();
+                        path.push((tmp, curr_node));
+                        curr_node = tmp;
+                    }
+                    return Some(path);
+                }
+            }
+        }
+    }
+    return None;
+}
+
+fn solve_flow(
+    graph: &mut Vec<HashMap<usize, i32>>,
+    source: usize,
+    sink: usize,
+    max_cap: i32,
+) -> (i32, Vec<(usize, usize)>) {
+    let mut curr_cap = max_cap;
+    let mut bottle_neck = i32::MAX;
     let mut max_flow = 0;
-    for (_, edge) in graph.nodes.get(graph.source).unwrap() {
-        if edge.capacity != 0 {
-            max_flow += edge.flow;
+    let mut path: Vec<(usize, usize)> = vec![];
+    loop {
+        match bfs(&graph, source, sink, curr_cap) {
+            Some(found_path) => {
+                {
+                    for (from_node, to_node) in &found_path {
+                        bottle_neck = bottle_neck.min(*graph[*from_node].get(&to_node).unwrap());
+                    }
+                }
+
+                max_flow += bottle_neck;
+
+                for (from_node, to_node) in &found_path {
+                    //TODO: husk at sætte residual graph, hvis det er fejl!
+                    *graph[*from_node].get_mut(&to_node).unwrap() -= bottle_neck;
+                    *graph[*to_node].get_mut(&from_node).unwrap() += bottle_neck;
+                }
+                path = found_path;
+            }
+            None => {
+                if curr_cap > 0 {
+                    curr_cap /= 2;
+                }
+                if curr_cap < 1 {
+                    return (max_flow, path);
+                }
+            }
         }
     }
-
-    let mut flow_graph: HashSet<(usize, usize, i64)> = HashSet::new();
-    let mut min_cut_nodes: Vec<usize> = vec![];
-    for edges in graph.nodes {
-        for (_, edge) in edges {
-            if edge.capacity != 0 && edge.flow > 0 {
-                flow_graph.insert((edge.from, edge.to, edge.flow));
-            }
-            if edge.capacity != 0 && edge.flow == edge.capacity {
-                println!("{:?}", edge);
-                min_cut_nodes.push(edge.from);
-            }
-        }
-    }
-
-    let num_lines = min_cut_nodes.len();
-
-    println!("{num_lines}");
-    for i in min_cut_nodes {
-        println!("{i}");
-    }
-
-    // let num_lines = flow_graph.len();
-    //
-    // println!("{n} {max_flow} {num_lines}");
-    //
-    // for (u, v, c) in flow_graph {
-    //     println!("{u} {v} {c}");
-    // }
 }
