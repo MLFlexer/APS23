@@ -1,8 +1,19 @@
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     io::{self, Read},
-    vec,
 };
+
+#[derive(Debug, PartialEq, PartialOrd, Clone, Ord, Eq)]
+struct Edge {
+    capacity: i64,
+    flow: i64,
+}
+
+impl Edge {
+    fn get_remainging_flow(&self) -> i64 {
+        return self.capacity - self.flow;
+    }
+}
 
 pub fn main() {
     let mut input = String::new();
@@ -14,8 +25,7 @@ pub fn main() {
     let s: usize = input.next().unwrap().parse().unwrap();
     let t: usize = input.next().unwrap().parse().unwrap();
 
-    let mut graph: Vec<HashMap<usize, i64>> = vec![HashMap::new(); n];
-    let mut r_graph: Vec<HashMap<usize, i64>> = vec![HashMap::new(); n];
+    let mut graph: Vec<HashMap<usize, Edge>> = vec![HashMap::new(); n];
     let mut max_cap = 0;
     for _ in 0..m {
         let u: usize = input.next().unwrap().parse().unwrap();
@@ -24,21 +34,24 @@ pub fn main() {
         if c > max_cap {
             max_cap = c;
         }
-        r_graph[u].insert(v, 0);
-        r_graph[v].insert(u, 0);
-        graph[u].insert(v, c);
-        graph[v].insert(u, 0);
+        graph[u].insert(
+            v,
+            Edge {
+                capacity: c,
+                flow: 0,
+            },
+        );
     }
-    let (max_flow, min_cut_nodes) = solve_flow(&mut graph, &mut r_graph, s, t, max_cap);
+    let (max_flow, _) = solve_flow(&mut graph, s, t, max_cap);
 
     let mut parents: HashSet<usize> = HashSet::from([s]);
     let mut queue: VecDeque<usize> = VecDeque::from([s]);
     while !queue.is_empty() {
         let from_node = queue.pop_front().unwrap();
-        for (to_node, flow) in graph[from_node].clone() {
-            if flow > 0 && !parents.contains(&to_node) {
-                parents.insert(to_node);
-                queue.push_back(to_node);
+        for (to_node, edge) in &graph[from_node] {
+            if edge.get_remainging_flow() > 0 && !parents.contains(&to_node) {
+                parents.insert(*to_node);
+                queue.push_back(*to_node);
             }
         }
     }
@@ -49,34 +62,30 @@ pub fn main() {
 }
 
 fn bfs(
-    graph: &Vec<HashMap<usize, i64>>,
+    graph: &Vec<HashMap<usize, Edge>>,
     source: usize,
     sink: usize,
     cap: i64,
 ) -> Option<(i64, Vec<(usize, usize)>)> {
-    //TODO: bør returnere den mindste capacity, som kan flowes
-    //igennem, så man undgår at skulle løbe det igennem på linje
-    //88/98
     let mut parents: HashMap<usize, usize> = HashMap::new();
     let mut queue: VecDeque<usize> = VecDeque::from([source]);
     while !queue.is_empty() {
         let from_node = queue.pop_front().unwrap();
-        for (to_node, flow) in graph[from_node].clone() {
-            if flow >= cap && !parents.contains_key(&to_node) {
-                parents.insert(to_node, from_node);
-                queue.push_back(to_node);
-                if to_node == sink {
+        for (to_node, edge) in &graph[from_node] {
+            if edge.get_remainging_flow() >= cap && !parents.contains_key(&to_node) {
+                parents.insert(*to_node, from_node);
+                queue.push_back(*to_node);
+                if *to_node == sink {
                     let mut path: Vec<(usize, usize)> = vec![];
                     let mut curr_node = sink;
-                    let mut bottle_neck = flow;
+                    let mut bottle_neck = edge.get_remainging_flow();
                     while curr_node != source {
                         let tmp = *parents.get(&curr_node).unwrap();
-                        // println!("bottle_neck: {}", bottle_neck);
-                        bottle_neck = bottle_neck.min(*graph[tmp].get(&curr_node).unwrap());
+                        bottle_neck = bottle_neck
+                            .min(graph[tmp].get(&curr_node).unwrap().get_remainging_flow());
                         path.push((tmp, curr_node));
                         curr_node = tmp;
                     }
-                    // println!("bottle_neck: {}", bottle_neck);
                     return Some((bottle_neck, path));
                 }
             }
@@ -86,40 +95,34 @@ fn bfs(
 }
 
 fn solve_flow(
-    graph: &mut Vec<HashMap<usize, i64>>,
-    r_graph: &mut Vec<HashMap<usize, i64>>,
+    graph: &mut Vec<HashMap<usize, Edge>>,
     source: usize,
     sink: usize,
     max_cap: i64,
 ) -> (i64, Vec<(usize, usize)>) {
     let mut curr_cap = max_cap;
-    //let mut bottle_neck = i64::MAX;
     let mut max_flow = 0;
     let mut path: Vec<(usize, usize)> = vec![];
     loop {
         match bfs(&graph, source, sink, curr_cap) {
             Some((bottle_neck, found_path)) => {
-                // {
-                //     println!("bottle_neck bfs: {}", bottle_neck);
-                //     for (from_node, to_node) in &found_path {
-                //         bottle_neck = bottle_neck.min(
-                //             graph[*from_node]
-                //                 .get(&to_node)
-                //                 .unwrap()
-                //                 .get_remainging_flow(),
-                //         );
-                //     }
-                //     println!("bottle_neck: {}", bottle_neck);
-                // }
-
                 max_flow += bottle_neck;
-
                 for (from_node, to_node) in &found_path {
-                    //TODO: husk at sætte residual graph, hvis det er fejl!
-                    *graph[*from_node].get_mut(&to_node).unwrap() -= bottle_neck;
-                    *graph[*to_node].get_mut(&from_node).unwrap() += bottle_neck;
-                    *r_graph[*from_node].get_mut(&to_node).unwrap() -= bottle_neck;
-                    *r_graph[*to_node].get_mut(&from_node).unwrap() += bottle_neck;
+                    graph[*from_node].get_mut(&to_node).unwrap().flow += bottle_neck;
+                    match graph[*to_node].get_mut(&from_node) {
+                        Some(edge) => {
+                            edge.flow -= bottle_neck;
+                        }
+                        None => {
+                            graph[*to_node].insert(
+                                *from_node,
+                                Edge {
+                                    capacity: 0,
+                                    flow: -bottle_neck,
+                                },
+                            );
+                        }
+                    }
                 }
                 path = found_path;
             }
