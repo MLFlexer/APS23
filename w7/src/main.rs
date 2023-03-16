@@ -1,4 +1,7 @@
 mod climbingworm;
+mod ants;
 fn main() {
-    climbingworm::main();
+    unsafe {
+    ants::main();
+    }
 }
