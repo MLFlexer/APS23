@@ -1,7 +1,6 @@
 mod climbingworm;
 mod ants;
+mod robotprotection;
 fn main() {
-    unsafe {
-    ants::main();
-    }
+    robotprotection::main();
 }
