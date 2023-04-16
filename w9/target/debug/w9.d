@@ -1,1 +1,1 @@
-/home/mlflexer/Desktop/APS23/w9/target/debug/w9: /home/mlflexer/Desktop/APS23/w9/src/main.rs /home/mlflexer/Desktop/APS23/w9/src/quiteaproblem.rs
+/home/mlflexer/repos/APS23/w9/target/debug/w9: /home/mlflexer/repos/APS23/w9/src/bing.rs /home/mlflexer/repos/APS23/w9/src/exam.rs /home/mlflexer/repos/APS23/w9/src/main.rs /home/mlflexer/repos/APS23/w9/src/quiteaproblem.rs

@@ -1,7 +1,10 @@
-use std::io::{self, BufRead};
+use std::{
+    collections::HashMap,
+    io::{self, Read},
+};
 
 struct Node {
-    childen: Vec<Option<Node>>,
+    childen: HashMap<char, Node>,
     count: u32,
 }
 struct Trie {
@@ -9,22 +12,30 @@ struct Trie {
 }
 
 impl Node {
-    fn insert(&mut self, char_iter: impl Iterator<Item = char>) {
+    fn insert(&mut self, char_iter: &mut impl Iterator<Item = char>) -> u32 {
         match char_iter.next() {
-            None => (),
+            None => {
+                let prev_count = self.count;
+                self.count += 1;
+                return prev_count;
+            }
             Some(current_char) => {
                 self.count += 1;
-                let index = (current_char.to_digit(32).unwrap() % 32) as usize;
-                match self.childen[index] {
-                    Some(node) => {
-                        node.insert(char_iter);
-                    }
+                match self.childen.get_mut(&current_char) {
+                    Some(node) => node.insert(char_iter),
                     None => {
-                        self.childen[index] = Some(Node {
-                            childen: Vec::with_capacity(32),
-                            count: 0,
-                        });
-                        self.childen[index].unwrap().insert(char_iter);
+                        self.childen.insert(
+                            current_char,
+                            Node {
+                                childen: HashMap::new(),
+                                count: 0,
+                            },
+                        );
+
+                        self.childen
+                            .get_mut(&current_char)
+                            .unwrap()
+                            .insert(char_iter)
                     }
                 }
             }
@@ -33,13 +44,13 @@ impl Node {
 }
 
 impl Trie {
-    fn insert(&mut self, string: &str) {
+    fn insert(&mut self, string: &str) -> u32 {
         let mut char_iter = string.chars();
-        self.root.insert(char_iter);
+        self.root.insert(&mut char_iter)
     }
     fn new(string: &str) -> Trie {
-        let mut root = Node {
-            childen: Vec::with_capacity(32),
+        let root = Node {
+            childen: HashMap::new(),
             count: 0,
         };
         let mut trie = Trie { root };
@@ -47,15 +58,25 @@ impl Trie {
         return trie;
     }
 }
-
 pub fn main() {
-    let stdin = io::stdin();
-    for line in stdin.lock().lines().map(|l| l.unwrap()) {
-        let words: Vec<&str> = line.split_whitespace().collect();
-        for word in words {
-            if word.len() >= prob_str.len() {
-                preprocessing(word, a, b);
-            }
-        }
+    let mut input = String::new();
+    io::stdin().read_to_string(&mut input).unwrap();
+    let mut input = input.split_ascii_whitespace();
+
+    let n: usize = input.next().unwrap().parse().unwrap();
+
+    let mut trie = Trie::new("");
+    for _ in 0..n {
+        let word = input.next().unwrap();
+        println!("{}", trie.insert(word));
     }
+
+    // let stdin = io::stdin();
+    //
+    // for line in stdin.lock().lines().map(|l| l.unwrap()) {
+    //     let words: Vec<&str> = line.split_whitespace().collect();
+    //     for word in words {
+    //         println!("{}", trie.insert(word));
+    //     }
+    // }
 }
