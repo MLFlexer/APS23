@@ -1,4 +1,5 @@
+mod bing;
 mod quiteaproblem;
 fn main() {
-    quiteaproblem::main();
+    bing::main();
 }
